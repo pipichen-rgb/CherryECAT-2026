@@ -957,7 +957,6 @@ void ec_slaves_scanning(ec_master_t *master)
     ec_datagram_t *datagram;
     ec_slave_t *slave;
     uint8_t netdev_idx;
-    bool rescan_required = false;
     uint64_t scan_jiffies;
     uint64_t ref_time[CONFIG_EC_MAX_NETDEVS] = { 0 };
     int ret;
@@ -999,7 +998,7 @@ void ec_slaves_scanning(ec_master_t *master)
         }
 
         if (datagram->working_counter != master->slaves_working_counter[netdev_idx]) {
-            rescan_required = 1;
+            master->rescan_request = true;
             master->slaves_working_counter[netdev_idx] = datagram->working_counter;
             EC_LOG_INFO("%u slaves responding on %s device\n",
                         master->slaves_working_counter[netdev_idx],
@@ -1019,17 +1018,14 @@ void ec_slaves_scanning(ec_master_t *master)
         }
     }
 
-    if (rescan_required || master->rescan_request) {
+    if (master->rescan_request) {
         uint32_t count = 0, slave_index, autoinc_address;
         uint8_t step = 0;
-
-        master->rescan_request = false;
-        rescan_required = 0;
 
         ec_master_stop(master);
 
         ec_osal_mutex_take(master->scan_lock);
-
+        master->rescan_request = false;
         master->scan_done = false;
         EC_LOG_INFO("Rescanning bus...\n");
 

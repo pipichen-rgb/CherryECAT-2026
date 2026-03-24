@@ -595,17 +595,19 @@ int ec_master_stop(ec_master_t *master)
         master->slaves[i].force_update = true;
     }
 
-    while (1) {
-        for (netdev_idx = EC_NETDEV_MAIN; netdev_idx < CONFIG_EC_MAX_NETDEVS; netdev_idx++) {
-            if (master->netdev[netdev_idx]->link_state == 0) {
-                goto out;
-            }
+    if (!master->rescan_request) {
+        while (1) {
+            for (netdev_idx = EC_NETDEV_MAIN; netdev_idx < CONFIG_EC_MAX_NETDEVS; netdev_idx++) {
+                if (master->netdev[netdev_idx]->link_state == 0) {
+                    goto out;
+                }
 
-            if ((master->slaves_state[netdev_idx] & EC_SLAVE_STATE_MASK) == EC_SLAVE_STATE_PREOP) {
-                goto out;
+                if ((master->slaves_state[netdev_idx] & EC_SLAVE_STATE_MASK) == EC_SLAVE_STATE_PREOP) {
+                    goto out;
+                }
             }
+            ec_osal_msleep(10);
         }
-        ec_osal_msleep(10);
     }
 
 out:
