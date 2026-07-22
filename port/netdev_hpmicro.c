@@ -9,6 +9,7 @@
 #include "hpm_l1c_drv.h"
 #include "board.h"
 #include "ec_master.h"
+#include "hpm_sdk_version.h"
 
 #if defined(HPM_ENET_RGMII) && HPM_ENET_RGMII
 #define RGMII 1
@@ -201,10 +202,13 @@ uint16_t ec_mdio_low_level_read(struct chry_phy_device *phydev, uint16_t phy_add
 {
     (void)phydev;
     //ec_netdev_t *netdev = (ec_netdev_t *)phydev->user_data;
-
+#if SDK_VERSION_NUMBER < 0x10C00
+    return enet_read_phy(ENET, phy_addr, regnum);
+#else
     uint16_t val = 0;
     enet_read_phy(ENET, phy_addr, regnum, &val);
     return val;
+#endif
 }
 
 void ec_netdev_low_level_link_up(ec_netdev_t *netdev, struct chry_phy_status *status)
