@@ -52,6 +52,8 @@ ec_master_start
     * - master
       - 主站对象指针
 
+.. note:: 此时非周期性任务线程关闭，后续非周期性 datagram 将会随着周期性 datagram 一起执行
+
 ec_master_stop
 ---------------------------
 
@@ -70,6 +72,35 @@ ec_master_stop
       - description
     * - master
       - 主站对象指针
+
+ec_master_queue_ext_datagram
+-------------------------------
+
+向队列中发送一个 datagram。调用多次则可以发送多个 datagram，前提是 `waiter` 为 false，或者除最后一个 datagram 外，其他 datagram 的 `waiter` 都为 false。否则会阻塞等待前一个 datagram 发送完成。
+
+.. code-block:: c
+   :linenos:
+
+    int ec_master_queue_ext_datagram(ec_master_t *master, ec_datagram_t *datagram, bool wakep_poll, bool waiter);
+
+.. list-table::
+    :widths: 10 10
+    :header-rows: 1
+
+    * - parameter
+      - description
+    * - master
+      - 主站对象指针
+    * - datagram
+      - 数据报文对象指针， 需要使用 ec_datagram_init 初始化后传入
+    * - wakep_poll
+      - 是否立刻唤醒非周期性任务线程，立即发送 datagram。如果当前处于周期性通信，则无效
+    * - waiter
+      - 是否等待当前 datagram 接收完成，阻塞等待
+    * - return
+      - 函数执行结果，0 表示成功，非 0 表示失败
+
+.. caution:: 以下 ec_master_get_slave_domain_xxx 相关 API 是异步的，访问时需要加关中断操作并且不具备实时性，如有实时性要求，请在 pdo callback 中访问。
 
 ec_master_get_slave_domain
 ----------------------------
@@ -308,13 +339,14 @@ ec_foe_write
 .. code-block:: c
    :linenos:
 
-    int ec_foe_write(ec_master_t *master,
-                    uint16_t slave_index,
-                    ec_datagram_t *datagram,
-                    const char *filename,
-                    uint32_t password,
-                    const void *buf,
-                    uint32_t size);
+  int ec_foe_write(ec_master_t *master,
+                  uint16_t slave_index,
+                  ec_datagram_t *datagram,
+                  const char *filename,
+                  uint32_t password,
+                  const void *buf,
+                  uint32_t size,
+                  foe_write_read_hook_t write_hook);
 
 .. list-table::
     :widths: 10 10
@@ -335,7 +367,9 @@ ec_foe_write
     * - buf
       - 指向数据缓冲区的指针
     * - size
-      - 缓冲区大小，单位字节
+      - 缓冲区大小，单位字节。要求大小为整个文件的大小，不能分段写入
+    * - write_hook
+      - 写入回调函数指针。使用分段写入功能时使用
     * - return
       - 函数执行结果，0 表示成功，非 0 表示失败
 
@@ -347,14 +381,15 @@ ec_foe_read
 .. code-block:: c
    :linenos:
 
-    int ec_foe_read(ec_master_t *master,
-                    uint16_t slave_index,
-                    ec_datagram_t *datagram,
-                    const char *filename,
-                    uint32_t password,
-                    void *buf,
-                    uint32_t maxsize,
-                    uint32_t *size);
+  int ec_foe_read(ec_master_t *master,
+                  uint16_t slave_index,
+                  ec_datagram_t *datagram,
+                  const char *filename,
+                  uint32_t password,
+                  void *buf,
+                  uint32_t maxsize,
+                  uint32_t *size,
+                  foe_write_read_hook_t read_hook);
 
 .. list-table::
     :widths: 10 10
@@ -377,14 +412,16 @@ ec_foe_read
     * - maxsize
       - 缓冲区最大大小，单位字节
     * - size
-      - 实际读取数据的大小指针，单位字节
+      - 实际读取数据的大小指针，单位字节。要求大小为整个文件的大小，不能分段写入
+    * - read_hook
+      - 读取回调函数指针。使用分段读取功能时使用
     * - return
       - 函数执行结果，0 表示成功，非 0 表示失败
 
 ec_eoe_start
 --------------------------------
 
-配置主从站 IPv4 并启动 EoE 通信。
+配置主从站 IPv4 并启动 EoE 通信。当前仅支持同一时刻，只能允许一个 EOE 从站通信，并且推荐在 preop 下进行（如果对性能没有要求，则忽视）。
 
 .. code-block:: c
    :linenos:

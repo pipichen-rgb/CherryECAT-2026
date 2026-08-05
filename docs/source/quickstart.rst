@@ -103,4 +103,4 @@ ethercat 命令行
     global_cmd_master->dc_sync_with_dc_ref_enable = true;       // enable DC sync with dc reference clock
     ec_master_start(global_cmd_master);
 
-- 对于时间敏感的 PDO 处理，可以在设置的 `pdo_callback` 中进行。对于不敏感的，异步的处理，则可以使用 `ec_master_get_slave_domain_*` 系列函数进行读写。
+- 对于有实时性要求的 PDO 处理，可以在设置的 `pdo_callback` 中进行。对于没有实时性要求的，则可以使用 `ec_master_get_slave_domain_*` 系列函数进行读写，但是需要加关中断操作。
