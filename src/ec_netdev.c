@@ -74,9 +74,9 @@ ec_netdev_t *ec_netdev_init(uint8_t netdev_index)
 
         config.auto_negotiation = true;
         config.loopback = false;
-        netdev->phydev.mdio_read = ec_mdio_low_level_read;
-        netdev->phydev.mdio_write = ec_mdio_low_level_write;
-        netdev->phydev.user_data = netdev;
+        config.mdio_read = ec_mdio_low_level_read;
+        config.mdio_write = ec_mdio_low_level_write;
+        config.user_data = netdev;
 
         // Delay to ensure PHY power up and access to mac
         ec_osal_msleep(200);

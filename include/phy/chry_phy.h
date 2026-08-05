@@ -14,12 +14,17 @@
 
 #include "chry_mii.h"
 
+struct chry_phy_device;
+
 struct chry_phy_config {
     bool loopback;
     bool auto_negotiation;
     bool duplex;
     uint16_t speed;
     uint16_t phy_port;
+    void (*mdio_write)(struct chry_phy_device *phydev, uint16_t phy_addr, uint16_t regnum, uint16_t val);
+    uint16_t (*mdio_read)(struct chry_phy_device *phydev, uint16_t phy_addr, uint16_t regnum);
+    void *user_data;
 };
 
 struct chry_phy_status {
@@ -28,7 +33,6 @@ struct chry_phy_status {
     uint16_t speed;
 };
 
-struct chry_phy_device;
 struct chry_phy_driver {
     char *phy_name;
     char *phy_desc;

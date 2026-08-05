@@ -43,6 +43,14 @@ int chry_phy_init(struct chry_phy_device *phydev, struct chry_phy_config *config
     bool extended_status = false;
     uint16_t phy_addr;
 
+    if (phydev == NULL || config == NULL) {
+        return -1;
+    }
+
+    phydev->mdio_write = config->mdio_write;
+    phydev->mdio_read = config->mdio_read;
+    phydev->user_data = config->user_data;
+
     for (uint16_t i = 0; i < 32; i++) {
         phy_addr = i;
         phy_id1 = phydev->mdio_read(phydev, phy_addr, MII_PHYSID1);
