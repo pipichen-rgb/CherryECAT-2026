@@ -464,12 +464,19 @@ int ec_master_start(ec_master_t *master)
     ec_slave_t *slave;
     uint32_t bitlen;
     uint8_t sm_idx;
+    uint8_t netdev_idx;
 
     EC_ASSERT_MSG(master->cycle_time >= (40 * 1000), "Cycle time %u ns is too small. Minimum is 40000 ns.\n", master->cycle_time);
     EC_ASSERT_MSG(master->cycle_time >= master->shift_time, "Shift time %u ns is larger than cycle time %u ns.\n", master->shift_time, master->cycle_time);
 
     if (master->started) {
         return 0;
+    }
+
+    for (netdev_idx = EC_NETDEV_MAIN; netdev_idx < CONFIG_EC_MAX_NETDEVS; netdev_idx++) {
+        if (master->netdev[netdev_idx] == NULL || master->netdev[netdev_idx]->link_state == 0) {
+            return -EC_ERR_INVAL;
+        }
     }
 
     while (!master->scan_done) {
@@ -794,7 +801,7 @@ EC_FAST_CODE_SECTION void ec_master_period_process(void *arg)
 
     start_time = ec_timestamp_get_time_ns();
 
-    if(master->dc_start_time == 0) {
+    if (master->dc_start_time == 0) {
         master->dc_start_time = start_time;
     }
 
